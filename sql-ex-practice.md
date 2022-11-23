@@ -633,5 +633,5 @@ SELECT
       JOIN Outcomes ON class=ship
   ) as sh
   left JOIN Outcomes o ON sh.name=o.ship
-  group BY class
+  GROUP BY class
 ```
