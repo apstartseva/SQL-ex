@@ -635,3 +635,4 @@ SELECT
   left JOIN Outcomes o ON sh.name=o.ship
   GROUP BY class
 ```
+
