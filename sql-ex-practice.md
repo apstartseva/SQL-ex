@@ -62,6 +62,25 @@
 + [62](#62)
 + [63](#63)
 + [64](#64)
++ [65](#65)
++ [66](#66)
++ [67](#67)
++ [68](#68)
++ [69](#69)
++ [70](#70)
++ [71](#71)
++ [72](#72)
++ [73](#73)
++ [74](#74)
++ [75](#75)
++ [76](#76)
++ [77](#77)
++ [78](#78)
++ [79](#79)
++ [80](#80)
++ [81](#81)
++ [82](#82)
++ [83](#83)
 
 ## 1
 
@@ -763,5 +782,277 @@ HAVING count(*)>1)
 
 https://sql-ex.ru/learn_exercises.php?LN=64
 ```sql
+SELECT i1.point, i1.date, 'inc', sum(inc) FROM Income,
+(SELECT point, date FROM Income
+EXCEPT
+SELECT Income.point, Income.date FROM Income
+JOIN Outcome ON (Income.point=Outcome.point) AND
+(Income.date=Outcome.date)
+) AS i1
+WHERE i1.point=Income.point AND i1.date=Income.date
+GROUP BY i1.point, i1.date
+UNION
+SELECT o1.point, o1.date, 'out', sum(out) FROM Outcome,
+(SELECT point, date FROM Outcome
+EXCEPT
+SELECT Income.point, Income.date FROM Income
+JOIN Outcome ON (Income.point=Outcome.point) AND
+(Income.date=Outcome.date)
+) AS o1
+WHERE o1.point=Outcome.point AND o1.date=Outcome.date
+GROUP BY o1.point, o1.date
+```
+## 65
 
+https://sql-ex.ru/learn_exercises.php?LN=65
+```sql
+WITH dsProd AS
+(SELECT DISTINCT p.maker,
+       p.type,
+       IIF(p.type = 'PC',1, IIF(p.type = 'Laptop',2,3)) sort
+FROM Product p
+),
+dsRes AS
+(SELECT row_number() over(ORDER BY maker, sort) num,
+       row_number() over(partition BY maker ORDER BY maker, sort) numPar,
+       maker,
+       type
+ FROM dsProd
+)
+SELECT num, IIF(numPar = 1,maker,''), type
+FROM dsRes
+```
+## 66
+
+https://sql-ex.ru/learn_exercises.php?LN=66
+```sql
+SELECT date, max(c) FROM
+(SELECT date,count(*) AS c FROM Trip,
+(SELECT trip_no,date FROM Pass_in_trip WHERE date>='2003-04-01' AND date<='2003-04-07' GROUP BY trip_no, date) AS t1
+WHERE Trip.trip_no=t1.trip_no AND town_from='Rostov'
+GROUP BY date
+UNION ALL
+SELECT '2003-04-01',0
+UNION ALL
+SELECT '2003-04-02',0
+UNION ALL
+SELECT '2003-04-03',0
+UNION ALL
+SELECT '2003-04-04',0
+UNION ALL
+SELECT '2003-04-05',0
+UNION ALL
+SELECT '2003-04-06',0
+UNION ALL
+SELECT '2003-04-07',0) AS t2
+GROUP BY date
+```
+## 67
+
+https://sql-ex.ru/learn_exercises.php?LN=67
+```sql
+select count(*) from
+(SELECT TOP 1 WITH TIES count(*) c, town_from, town_to from trip
+group by town_from, town_to
+order by c desc) as t
+```
+## 68
+
+https://sql-ex.ru/learn_exercises.php?LN=68
+```sql
+Select count(*) from (
+select TOP 1 WITH TIES sum(c) cc, c1, c2 from (
+SELECT count(*) c, town_from c1, town_to c2 from trip
+where town_from>=town_to
+group by town_from, town_to
+union all
+SELECT count(*) c,town_to, town_from from trip
+where town_to>town_from
+group by town_from, town_to
+) as t
+group by c1,c2
+order by cc desc
+) as tt
+```
+## 69
+
+https://sql-ex.ru/learn_exercises.php?LN=69
+```sql
+```
+## 70
+
+https://sql-ex.ru/learn_exercises.php?LN=70
+```sql
+SELECT DISTINCT o.battle
+FROM outcomes o
+LEFT JOIN ships s ON s.name = o.ship
+LEFT JOIN classes c ON o.ship = c.class OR s.class = c.class
+WHERE c.country IS NOT NULL
+GROUP BY c.country, o.battle
+HAVING COUNT(o.ship) >= 3
+```
+## 71
+
+https://sql-ex.ru/learn_exercises.php?LN=71
+```sql
+SELECT p.maker
+FROM product p
+LEFT JOIN pc ON pc.model = p.model
+WHERE p.type = 'PC'
+GROUP BY p.maker
+HAVING COUNT(p.model) = COUNT(pc.model)
+```
+## 72
+
+https://sql-ex.ru/learn_exercises.php?LN=72
+```sql
+with q as (
+  select
+    pt.id_psg as id
+    , count(pt.date) as trip_num
+    from pass_in_trip pt join trip t on pt.trip_no=t.trip_no
+  group by pt.id_psg
+  -- having count(distinct t.id_comp)=1
+  having max(t.id_comp)=min(t.id_comp)
+)
+select name, trip_num
+from q join Passenger p on q.id=p.id_psg
+where trip_num=(select max(trip_num) from q)
+```
+## 73
+
+https://sql-ex.ru/learn_exercises.php?LN=73
+```sql
+select country, name as battle from classes, battles
+except
+select country, battle
+from (
+  select class, name as ship_name from ships
+  union
+  select ship, ship from outcomes
+) as sh
+join Classes c on sh.class=c.class
+join Outcomes o on o.ship=sh.ship_name
+```
+## 74
+
+https://sql-ex.ru/learn_exercises.php?LN=74
+```sql
+SELECT c.country, c.class
+FROM classes c
+WHERE UPPER(c.country) = 'RUSSIA' AND EXISTS (
+SELECT c.country, c.class
+FROM classes c
+WHERE UPPER(c.country) = 'RUSSIA' )
+UNION ALL
+SELECT c.country, c.class
+FROM classes c
+WHERE NOT EXISTS (SELECT c.country, c.class
+FROM classes c
+WHERE UPPER(c.country) = 'RUSSIA' )
+```
+## 75
+
+https://sql-ex.ru/learn_exercises.php?LN=75
+```sql
+```
+## 76
+
+https://sql-ex.ru/learn_exercises.php?LN=76
+```sql
+WITH cte AS
+(SELECT ROW_NUMBER() OVER (PARTITION BY ps.ID_psg,pit.place ORDER BY pit.date) AS rowNumber
+,DATEDIFF (minute, time_out, DATEADD(DAY,IIF(time_in<time_out,1,0),time_in)) AS timeFlight, ps.Id_psg, ps.name
+FROM Pass_in_trip pit LEFT JOIN trip tr ON pit.trip_no = tr.trip_no
+LEFT JOIN Passenger ps ON ps.ID_psg = pit.ID_psg -- Все рейсы
+)
+SELECT MAX(cte.name),SUM(timeFlight) FROM cte
+GROUP BY cte.ID_psg
+HAVING MAX(rowNumber) = 1
+```
+## 77
+
+https://sql-ex.ru/learn_exercises.php?LN=77
+```sql
+```
+## 78
+
+https://sql-ex.ru/learn_exercises.php?LN=78
+```sql
+SELECT name, REPLACE(CONVERT(CHAR(12), DATEADD(m, DATEDIFF(m,0,date),0), 102),'.','-') AS first_day,
+             REPLACE(CONVERT(CHAR(12), DATEADD(s,-1,DATEADD(m, DATEDIFF(m,0,date)+1,0)), 102),'.','-') AS last_day
+FROM Battles
+```
+## 79
+
+https://sql-ex.ru/learn_exercises.php?LN=79
+```sql
+SELECT Passenger.name, A.minutes
+FROM (SELECT P.ID_psg,
+      SUM((DATEDIFF(minute, time_out, time_in) + 1440)%1440) AS minutes,
+      MAX(SUM((DATEDIFF(minute, time_out, time_in) + 1440)%1440)) OVER() AS MaxMinutes
+      FROM Pass_in_trip P JOIN
+       Trip AS T ON P.trip_no = T.trip_no
+      GROUP BY P.ID_psg
+      ) AS A JOIN
+ Passenger ON Passenger.ID_psg = A.ID_psg
+WHERE A.minutes = A.MaxMinutes
+```
+## 80
+
+https://sql-ex.ru/learn_exercises.php?LN=80
+```sql
+SELECT DISTINCT maker
+FROM product
+WHERE maker NOT IN (
+     SELECT maker
+     FROM product
+     WHERE type='PC' AND model NOT IN (
+          SELECT model
+          FROM PC))
+```
+## 81
+
+https://sql-ex.ru/learn_exercises.php?LN=81
+```sql
+SELECT O.*
+FROM outcome O
+INNER JOIN
+(
+SELECT TOP 1 WITH TIES YEAR(date) AS Y, MONTH(date) AS M, SUM(out) AS ALL_TOTAL
+FROM outcome
+GROUP BY YEAR(date), MONTH(date)
+ORDER BY ALL_TOTAL DESC
+) R ON YEAR(O.date) = R.Y AND MONTH(O.date) = R.M
+```
+## 82
+
+https://sql-ex.ru/learn_exercises.php?LN=82
+```sql
+WITH CTE(code,price,number)
+AS
+(
+SELECT PC.code,PC.price, number= ROW_NUMBER() OVER (ORDER BY PC.code)
+FROM PC
+)
+SELECT CTE.code, AVG(C.price)
+FROM CTE
+JOIN CTE C ON (C.number-CTE.number)<6 AND (C.number-CTE.number)> =0
+GROUP BY CTE.number,CTE.code
+HAVING COUNT(CTE.number)=6
+```
+## 83
+
+https://sql-ex.ru/learn_exercises.php?LN=83
+```sql
+SELECT name
+FROM Ships AS s JOIN Classes AS cl1 ON s.class = cl1.class
+WHERE
+CASE WHEN numGuns = 8 THEN 1 ELSE 0 END +
+CASE WHEN bore = 15 THEN 1 ELSE 0 END +
+CASE WHEN displacement = 32000 THEN 1 ELSE 0 END +
+CASE WHEN type = 'bb' THEN 1 ELSE 0 END +
+CASE WHEN launched = 1915 THEN 1 ELSE 0 END +
+CASE WHEN s.class = 'Kongo' THEN 1 ELSE 0 END +
+CASE WHEN country = 'USA' THEN 1 ELSE 0 END > = 4
 ```
