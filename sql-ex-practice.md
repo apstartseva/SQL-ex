@@ -54,7 +54,14 @@
 + [54](#54)
 + [55](#55)
 + [56](#56)
-
++ [57](#57)
++ [58](#58)
++ [59](#59)
++ [60](#60)
++ [61](#61)
++ [62](#62)
++ [63](#63)
++ [64](#64)
 
 ## 1
 
@@ -635,4 +642,126 @@ SELECT
   left JOIN Outcomes o ON sh.name=o.ship
   GROUP BY class
 ```
+## 57
 
+https://sql-ex.ru/learn_exercises.php?LN=57
+```sql
+SELECT c.class, SUM(sh.sunked)
+FROM classes c
+  LEFT JOIN (
+     SELECT t.name AS name, t.class AS class,
+           CASE WHEN o.result = 'sunk' THEN 1 ELSE 0 END AS sunked
+     FROM
+     (
+      SELECT name, class
+      FROM ships
+       UNION
+      SELECT ship, ship
+      FROM outcomes
+     )
+     AS t
+    LEFT JOIN outcomes o ON t.name = o.ship
+  ) sh ON sh.class = c.class
+GROUP BY c.class
+HAVING COUNT(DISTINCT sh.name) >= 3 AND SUM(sh.sunked) > 0
+```
+## 58
+
+https://sql-ex.ru/learn_exercises.php?LN=58
+```sql
+SELECT m, t,
+CAST(100.0*cc/cc1 AS NUMERIC(5,2))
+from
+(SELECT m, t, sum(c) cc from
+(SELECT distinct maker m, 'PC' t, 0 c from product
+union all
+SELECT distinct maker, 'Laptop', 0 from product
+union all
+SELECT distinct maker, 'Printer', 0 from product
+union all
+SELECT maker, type, count(*) from product
+group by maker, type) as tt
+group by m, t) tt1
+JOIN (
+SELECT maker, count(*) cc1 from product group by maker
+) tt2
+ON m=maker
+```
+## 59
+
+https://sql-ex.ru/learn_exercises.php?LN=59
+```sql
+SELECT c1, c2-
+(CASE
+WHEN o2 is null THEN 0
+ELSE o2
+END)
+from
+(SELECT point c1, sum(inc) c2 FROM income_o
+group by point) as t1
+left join
+(SELECT point o1, sum(out) o2 FROM outcome_o
+group by point) as t2
+on c1=o1
+```
+## 60
+
+https://sql-ex.ru/learn_exercises.php?LN=60
+```sql
+SELECT c1, c2-
+(CASE
+WHEN o2 is null THEN 0
+ELSE o2
+END)
+from
+(SELECT point c1, sum(inc) c2 FROM income_o
+where date<'2001-04-15'
+group by point) as t1
+left join
+(SELECT point o1, sum(out) o2 FROM outcome_o
+where date<'2001-04-15'
+group by point) as t2
+on c1=o1
+```
+## 61
+
+https://sql-ex.ru/learn_exercises.php?LN=61
+```sql
+SELECT sum(i) FROM
+(SELECT point, sum(inc) as i FROM
+income_o
+group by point
+
+UNION
+
+SELECT point, -sum(out) as i FROM
+outcome_o
+group by point
+) as t
+```
+## 62
+
+https://sql-ex.ru/learn_exercises.php?LN=62
+```sql
+SELECT
+(SELECT sum(inc) FROM Income_o WHERE date<'2001-04-15')
+-
+(SELECT sum(out) FROM Outcome_o WHERE date<'2001-04-15')
+AS remain
+```
+## 63
+
+https://sql-ex.ru/learn_exercises.php?LN=63
+```sql
+SELECT name FROM Passenger
+WHERE ID_psg in
+(SELECT ID_psg FROM Pass_in_trip
+GROUP BY place, ID_psg
+HAVING count(*)>1)
+```
+## 64
+
+https://sql-ex.ru/learn_exercises.php?LN=64
+```sql
+
+```
