@@ -81,6 +81,26 @@
 + [81](#81)
 + [82](#82)
 + [83](#83)
++ [84](#84)
++ [85](#85)
++ [86](#86)
++ [87](#87)
++ [88](#88)
++ [89](#89)
++ [90](#90)
++ [91](#91)
++ [92](#92)
++ [93](#93)
++ [94](#94)
++ [95](#95)
++ [96](#96)
++ [97](#97)
++ [98](#98)
++ [99](#99)
++ [100](#100)
+
+
+
 
 ## 1
 
@@ -467,6 +487,10 @@ SELECT ship AS name FROM classes,Outcomes WHERE classes.class = outcomes.ship
 
 https://sql-ex.ru/learn_exercises.php?LN=37
 ```sql
+SELECT class from(select class, name from ships
+union
+select class, ship as name from outcomes join classes on classes.class = outcomes.ship) as A
+group by class having count(A.name)=1
 ```
 ## 38
 
@@ -569,6 +593,40 @@ WHERE battle = 'Guadalcanal'
 
 https://sql-ex.ru/learn_exercises.php?LN=47
 ```sql
+WITH out AS (SELECT *
+FROM outcomes JOIN (SELECT ships.name s_name, classes.class s_class, classes.country s_country
+FROM ships FULL JOIN classes
+ON ships.class = classes.class
+) u
+ON outcomes.ship=u.s_class
+UNION
+SELECT *
+FROM outcomes JOIN (SELECT ships.name s_name, classes.class s_class, classes.country s_country
+FROM ships FULL JOIN classes
+ON ships.class = classes.class
+) u
+ON outcomes.ship=u.s_name)
+SELECT fin.country
+FROM (
+SELECT DISTINCT t.country, COUNT(t.name) AS num_ships
+FROM (
+select distinct c.country, s.name
+from classes c
+inner join Ships s on s.class= c.class
+union
+select distinct c.country, o.ship
+from classes c
+inner join Outcomes o on o.ship= c.class) t
+GROUP BY t.country
+
+
+INTERSECT
+
+
+SELECT out.s_country, COUNT(out.ship) AS num_ships
+FROM out
+WHERE out.result='sunk'
+GROUP BY out.s_country) fin
 ```
 ## 48
 
@@ -608,6 +666,7 @@ WHERE ship IN (SELECT name
 
 https://sql-ex.ru/learn_exercises.php?LN=51
 ```sql
+select NAME from(select name as NAME, displacement, numguns from ships inner join classes on ships.class = classes.class union select ship as NAME, displacement, numguns from outcomes inner join classes on outcomes.ship= classes.class) as d1 inner join (select displacement, max(numGuns) as numguns from ( select displacement, numguns from ships inner join classes on ships.class = classes.class union select displacement, numguns from outcomes inner join classes on outcomes.ship= classes.class) as f group by displacement) as d2 on d1.displacement=d2.displacement and d1.numguns =d2.numguns
 ```
 ## 52
 
@@ -626,11 +685,15 @@ AND c.type = 'bb'
 
 https://sql-ex.ru/learn_exercises.php?LN=53
 ```sql
+Select CAST(AVG(numguns*1.0) AS NUMERIC(6,2)) as Avg_nmg from classes where type = 'bb'
 ```
 ## 54
 
 https://sql-ex.ru/learn_exercises.php?LN=54
 ```sql
+select CAST(AVG(numguns*1.0) AS NUMERIC(6,2)) as AVG_nmg from (select ship, numguns, type from Outcomes join classes on ship = class
+union
+select name, numguns, type from ships s join classes c on c.class = s.class) as x where type = 'bb'
 ```
 ## 55
 
@@ -878,6 +941,27 @@ order by cc desc
 
 https://sql-ex.ru/learn_exercises.php?LN=69
 ```sql
+select
+  row_number() over(order by maker) as num
+  ,CASE WHEN mnum=1 THEN maker
+    ELSE ''
+  END as maker
+  ,type
+  from (
+    select
+    row_number() over(partition by maker order by maker, ord) as mnum
+    ,maker
+    ,type
+    from (
+    select
+      distinct maker, type
+      ,CASE WHEN LOWER(type)='pc' then 1
+            WHEN LOWER(type)='laptop' then 2
+            ELSE 3
+      END as ord
+      from product
+    ) as mto
+  ) as mtn
 ```
 ## 70
 
@@ -974,6 +1058,19 @@ HAVING MAX(rowNumber) = 1
 
 https://sql-ex.ru/learn_exercises.php?LN=77
 ```sql
+(select s.name as shipname,launched,b.name as batname,
+row_number() over (partition by s.name order by "date") as num
+from ships s,battles b
+where to_char("date",'yyyy')>=launched
+and launched is not null)
+where num = 1
+union
+(
+select name,launched,(select name from battles
+where "date" = (select max("date") from battles)) as batname
+from ships
+where launched is null
+)
 ```
 ## 78
 
@@ -1055,4 +1152,260 @@ CASE WHEN type = 'bb' THEN 1 ELSE 0 END +
 CASE WHEN launched = 1915 THEN 1 ELSE 0 END +
 CASE WHEN s.class = 'Kongo' THEN 1 ELSE 0 END +
 CASE WHEN country = 'USA' THEN 1 ELSE 0 END > = 4
+```
+## 84
+
+https://sql-ex.ru/learn_exercises.php?LN=84
+```sql
+
+SELECT C.name, A.N_1_10, A.N_11_21, A.N_21_30
+FROM (SELECT T.ID_comp,
+       SUM(CASE WHEN DAY(P.date) < 11 THEN 1 ELSE 0 END) AS N_1_10,
+       SUM(CASE WHEN (DAY(P.date) > 10 AND DAY(P.date) < 21) THEN 1 ELSE 0 END) AS N_11_21,
+       SUM(CASE WHEN DAY(P.date) > 20 THEN 1 ELSE 0 END) AS N_21_30
+      FROM Trip AS T JOIN
+       Pass_in_trip AS P ON T.trip_no = P.trip_no AND CONVERT(char(6), P.date, 112) = '200304'
+      GROUP BY T.ID_comp
+      ) AS A JOIN
+ Company AS C ON A.ID_comp = C.ID_comp
+ ```
+ ## 85
+
+https://sql-ex.ru/learn_exercises.php?LN=85
+```sql
+select maker
+from product
+group by maker
+having count(distinct type) = 1 and
+       (min(type) = 'pc' or
+       (min(type) = 'printer' and count(model) > 2))
+```
+ ## 86
+
+https://sql-ex.ru/learn_exercises.php?LN=86
+```sql
+SELECT maker,
+       CASE count(distinct type) when 2 then MIN(type) + '/' + MAX(type)
+                                 when 1 then MAX(type)
+                                 when 3 then 'Laptop/PC/Printer' END
+FROM Product
+GROUP BY maker
+```
+ ## 87
+
+https://sql-ex.ru/learn_exercises.php?LN=87
+```sql
+SELECT DISTINCT name, COUNT(town_to) Qty
+FROM Trip tr JOIN Pass_in_trip pit ON tr.trip_no = pit.trip_no JOIN
+         Passenger psg ON pit.ID_psg = psg.ID_psg
+WHERE town_to = 'Moscow' AND pit.ID_psg NOT IN(SELECT DISTINCT ID_psg
+FROM Trip tr JOIN Pass_in_trip pit ON tr.trip_no = pit.trip_no
+WHERE date+time_out = (SELECT MIN (date+time_out)
+                       FROM Trip tr1 JOIN Pass_in_trip pit1 ON tr1.trip_no = pit1.trip_no
+                       WHERE pit.ID_psg = pit1.ID_psg)
+AND town_from = 'Moscow')
+GROUP BY pit.ID_psg, name
+HAVING COUNT(town_to) > 1
+```
+## 88
+https://sql-ex.ru/learn_exercises.php?LN=88
+```sql
+ SELECT
+ (SELECT name FROM Passenger WHERE ID_psg = B.ID_psg) AS name,
+ B.trip_Qty,
+ (SELECT name FROM Company WHERE ID_comp = B.ID_comp) AS Company
+FROM (SELECT P.ID_psg, MIN(T.ID_comp) AS ID_comp, COUNT(*) AS trip_Qty, MAX(COUNT(*)) OVER() AS Max_Qty
+      FROM Pass_in_trip AS P JOIN
+       Trip AS T ON P.trip_no = T.trip_no
+      GROUP BY P.ID_psg
+      HAVING MIN(T.ID_comp) = MAX(T.ID_comp)
+      ) AS B
+WHERE B.trip_Qty = B.Max_Qty
+```
+
+## 89
+https://sql-ex.ru/learn_exercises.php?LN=89
+```sql
+select Maker , count(distinct model) Qty from Product
+group by maker
+having count(distinct model) > = ALL
+(select count(distinct model) from Product
+group by maker)
+or
+count(distinct model) <= ALL
+(select count(distinct model) from Product
+group by maker)
+```
+## 90
+https://sql-ex.ru/learn_exercises.php?LN=90
+```sql
+Select maker, model, type from
+(
+Select
+row_number() over (order by model) p1,
+row_number() over (order by model DESC) p2,
+from Product
+) t1
+where p1 > 3 and p2 > 3
+```
+## 91
+https://sql-ex.ru/learn_exercises.php?LN=91
+```sql
+select count(maker)
+from product
+where maker in
+(
+  Select maker from product
+  group by maker
+  having count(model) = 1
+)
+```
+## 92
+https://sql-ex.ru/learn_exercises.php?LN=92
+```sql
+SELECT Q_NAME
+FROM utQ
+WHERE Q_ID IN (SELECT DISTINCT B.B_Q_ID
+                FROM (SELECT B_Q_ID
+                        FROM utB
+                        GROUP BY B_Q_ID
+                        HAVING SUM(B_VOL) = 765) AS B
+                WHERE B.B_Q_ID NOT IN (SELECT B_Q_ID
+                                        FROM utB
+                                        WHERE B_V_ID IN (SELECT B_V_ID
+                                                          FROM utB
+                                                          GROUP BY B_V_ID
+                                                          HAVING SUM(B_VOL) < 255)))
+```
+## 93
+https://sql-ex.ru/learn_exercises.php?LN=93
+``` sql
+select c.name, sum(vr.vr)
+from
+(select distinct t.id_comp, pt.trip_no, pt.date,t.time_out,t.time_in,--pt.id_psg,
+case
+     when DATEDIFF(mi, t.time_out,t.time_in)> 0 then DATEDIFF(mi, t.time_out,t.time_in)
+     when DATEDIFF(mi, t.time_out,t.time_in)<=0 then DATEDIFF(mi, t.time_out,t.time_in+1)
+end vr
+from pass_in_trip pt left join trip t on pt.trip_no=t.trip_no
+) vr left join company c on vr.id_comp=c.id_comp
+group by c.name
+```
+## 94
+https://sql-ex.ru/learn_exercises.php?LN=94
+```sql
+SELECT DATEADD(day, S.Num, D.date) AS Dt,
+       (SELECT COUNT(DISTINCT P.trip_no)
+        FROM Pass_in_trip P
+               JOIN Trip T
+                 ON P.trip_no = T.trip_no
+                    AND T.town_from = 'Rostov'
+                    AND P.date = DATEADD(day, S.Num, D.date)) AS Qty
+FROM (SELECT (3 * ( x - 1 ) + y - 1) AS Num
+        FROM (SELECT 1 AS x UNION ALL SELECT 2 UNION ALL SELECT 3) AS N1
+               CROSS JOIN (SELECT 1 AS y UNION ALL SELECT 2 UNION ALL SELECT 3) AS N2
+        WHERE (3 * ( x - 1 ) + y ) < 8) AS S,
+       (SELECT MIN(A.date) AS date
+        FROM (SELECT P.date,
+                       COUNT(DISTINCT P.trip_no) AS Qty,
+                       MAX(COUNT(DISTINCT P.trip_no)) OVER() AS M_Qty
+                FROM Pass_in_trip AS P
+                       JOIN Trip AS T
+                         ON P.trip_no = T.trip_no
+                            AND T.town_from = 'Rostov'
+                GROUP BY P.date) AS A
+        WHERE A.Qty = A.M_Qty) AS D
+```
+## 95
+https://sql-ex.ru/learn_exercises.php?LN=95
+```sql
+SELECT name,
+    COUNT(DISTINCT CONVERT(CHAR(24),date)+CONVERT(CHAR(4),Trip.trip_no)),
+    COUNT(DISTINCT plane),
+    COUNT(DISTINCT ID_psg),
+    COUNT(*)
+FROM Company,Pass_in_trip,Trip
+WHERE Company.ID_comp=Trip.ID_comp and Trip.trip_no=Pass_in_trip.trip_no
+GROUP BY Company.ID_comp,name
+```
+## 96
+https://sql-ex.ru/learn_exercises.php?LN=96
+```sql
+ with r as (select v.v_name,
+       v.v_id,
+       count(case when v_color = 'R' then 1 end) over(partition by v_id) cnt_r,
+       count(case when v_color = 'B' then 1 end) over(partition by b_q_id) cnt_b
+  from utV v join utB b on v.v_id = b.b_v_id)
+select v_name
+  from r
+where cnt_r > 1
+  and cnt_b > 0
+group by v_name
+```
+## 97
+https://sql-ex.ru/learn_exercises.php?LN=97
+```sql
+select code, speed, ram, price, screen
+from laptop where exists (
+  select 1 x
+  from (
+    select v, rank()over(order by v) rn
+    from ( select cast(speed as float) sp, cast(ram as float) rm,
+                  cast(price as float) pr, cast(screen as float) sc
+    )l unpivot(v for c in (sp, rm, pr, sc))u
+  )l pivot(max(v) for rn in ([1],[2],[3],[4]))p
+  where [1]*2 <= [2] and [2]*2 <= [3] and [3]*2 <= [4]
+)
+```
+## 98
+https://sql-ex.ru/learn_exercises.php?LN=98
+```sql
+with CTE AS
+(select
+1 n, cast (0 as varchar(16)) bit_or,
+code, speed, ram FROM PC
+UNION ALL
+select n*2,
+cast (convert(bit,(speed|ram)&n) as varchar(1))+cast(bit_or as varchar(15))
+, code, speed, ram
+from CTE where n < 65536
+)
+select code, speed, ram from CTE
+where n = 65536
+and CHARINDEX('1111', bit_or )> 0
+```
+## 99
+https://sql-ex.ru/learn_exercises.php?LN=99
+``` sql
+select point,
+       "date" income_date,
+       "date" + nvl(
+                  min(case when diff > cnt then cnt else null end),
+                  max(cnt)+1
+                ) incass_date
+from (select i.point,
+             i."date",
+             (trunc(o."date") - trunc(i."date")) diff, -- разница дней
+             count(1) over (partition by i.point, i."date" order by o."date" rows between unbounded preceding and current row)-1 cnt
+      from income_o i
+               join (select point, "date", 1 disabled from outcome_o
+                     union
+                     select point, trunc("date"+7,'DAY'), 1 disabled from income_o) o
+                 on i.point = o.point
+      where o."date" > = i."date")
+group by point, "date"
+```
+## 100
+https://sql-ex.ru/learn_exercises.php?LN=100
+``` sql
+with t1 as (
+select row_number() over(partition by date order by code) c1, *
+from outcome
+),
+t2 as (
+select row_number() over(partition by date order by code) c1, *
+from income
+)
+select coalesce(t2.date, t1.date) a1, coalesce(t2.c1, t1.c1) a2, t2.point, inc, t1.point, out
+from t2 full join t1 on t2.date = t1.date and t2.c1 = t1.c1
 ```
