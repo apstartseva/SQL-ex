@@ -99,7 +99,18 @@
 + [99](#99)
 + [100](#100)
 
+def contact_us(request):
+    if request.method == 'POST':
+        form = ContactUsForm(request.POST)
+        print(form)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            for k in cleaned_data.keys():
+                print(f'{k} - {cleaned_data[k]}')
+        else:
+            print('not valid')
 
+    return render(request, 'contact-us.html')
 
 
 ## 1
