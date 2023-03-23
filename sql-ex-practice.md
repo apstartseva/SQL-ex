@@ -1409,3 +1409,70 @@ from income
 select coalesce(t2.date, t1.date) a1, coalesce(t2.c1, t1.c1) a2, t2.point, inc, t1.point, out
 from t2 full join t1 on t2.date = t1.date and t2.c1 = t1.c1
 ```
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block title %}Связаться с нами{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center align-items-baseline">
+
+        <div class="col-3">
+            <form class="form-control" method="post">
+                <h5 class="text-center">Свяжитесь с нами</h5>
+
+                <div class="">
+                    <label class="form-label" for="id_name">Имя</label>
+                    <input class="form-control form-control-sm" type="text" id="id_name" name="name" required
+                           placeholder="Иванов Иван Иванович">
+                </div>
+
+                <div class="mt-2">
+                    <label class="form-label" for="id_phone">Телефон</label>
+                    <input class="form-control form-control-sm" type="tel" id="id_phone" name="phone" required
+                           placeholder="+71234567890">
+                </div>
+
+                <div class="mt-2">
+                    <label class="form-label" for="id_email">Email</label>
+                    <input class="form-control form-control-sm" type="email" id="id_email" name="email" required
+                           placeholder="example@address.com">
+                </div>
+
+                <div class="mt-2">
+                    <label class="form-label" for="id_message">Сообщение</label>
+                    <textarea class="form-control form-control-sm form-text" id="id_message" name="message" rows="4"
+                              placeholder=""></textarea>
+                </div>
+
+                {% csrf_token %}
+                <input class="btn btn-sm btn-primary mt-2 w-100" type="submit" value="Отправить">
+            </form>
+        </div>
+
+        <div class="col-4">
+            <h5>Для оформления заказа Вам необходимо:</h5>
+            <ul>
+                <li>
+                    <ol>
+                        <li>Перейти по ссылке в наш instagram</li>
+                        <li>Выбрать интересующие Вас продукты</li>
+                        <li>Написать в директ</li>
+                        <li>Наш менеджер ответит Вам в течение 15 минут и Вы сможете перейти к оформлению заказа</li>
+                    </ol>
+                </li>
+
+
+                <li class="mt-3">
+                    <ol>
+                        <li>Заполнить форму на данной странице</li>
+                        <li>Отправить форму</li>
+                        <li>Дождаться звонка от менеджера</li>
+                    </ol>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+{% endblock %}
